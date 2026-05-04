@@ -1,0 +1,10 @@
+﻿# 데이터 폴더 (용량 너무 큼)
+data/
+outputs/best_model.pth
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+# VS Code
+.vscode/

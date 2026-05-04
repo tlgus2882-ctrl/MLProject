@@ -1,0 +1,8 @@
+{
+  "exact_match": 0.2467,
+  "hamming": 0.9495,
+  "f1_micro": 0.6107,
+  "f1_macro": 0.3501,
+  "f1_samples": 0.6599,
+  "mAP": 0.3544
+}
