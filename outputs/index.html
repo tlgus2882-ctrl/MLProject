@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>비건 레시피 AI 추천</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50; /* 비건 느낌의 메인 그린 색상 */
+            --primary-hover: #45a049;
+            --bg-color: #f4f9f4;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: #f9fdf9;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .custom-file-upload {
+            display: inline-block;
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #e9ecef;
+            color: #495057;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            transition: background 0.2s;
+        }
+
+        .custom-file-upload:hover {
+            background-color: #dde0e3;
+        }
+
+        #imagePreview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            display: none;
+            margin: 0 auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .submit-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* 로딩 스피너 애니메이션 */
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 결과 영역 디자인 */
+        #resultArea {
+            display: none;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+
+        .section-title {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+            font-weight: bold;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+
+        .tag {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* --- 레시피 카드 스타일 --- */
+        .recipe-box {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .recipe-card {
+            background: #ffffff;
+            border: 1px solid #e0eed0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            transition: transform 0.2s;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+        }
+
+        .recipe-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .recipe-sub-title {
+            font-weight: 700;
+            color: #555;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            display: block;
+            font-size: 14px;
+        }
+
+        .recipe-text {
+            line-height: 1.7;
+            color: #666;
+            padding-left: 5px;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🥦 냉장고 속 재료로 비건 레시피 찾기</h1>
+        
+        <form id="uploadForm">
+            <div class="upload-area">
+                <label for="imageInput" class="custom-file-upload">
+                    📸 식재료 사진 선택하기
+                </label>
+                <input type="file" id="imageInput" accept="image/jpeg, image/png, image/avif" required>
+                <img id="imagePreview" alt="미리보기 이미지">
+            </div>
+            
+            <button type="submit" class="submit-btn" id="submitBtn">✨ AI 레시피 추천받기</button>
+        </form>
+
+        <div class="loading" id="loadingArea">
+            <div class="spinner"></div>
+            <p>AI가 재료를 분석하고 맛있는 레시피를 고민 중입니다...</p>
+        </div>
+
+        <div id="resultArea">
+            <div class="section-title">🔍 AI가 인식한 재료</div>
+            <div class="tags" id="ingredientsList"></div>
+            
+            <div class="section-title">🍽️ 추천 비건 레시피</div>
+            <div class="recipe-box" id="recipeContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 이미지 미리보기 기능
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+
+        imageInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 2. 폼 제출 및 API 통신
+        document.getElementById('uploadForm').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const file = imageInput.files[0];
+            if (!file) return;
+
+            // UI 상태 변경 (로딩 중)
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('resultArea').style.display = 'none';
+            document.getElementById('loadingArea').style.display = 'block';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                // --- 결과 화면 렌더링 ---
+                
+                // 1) 재료 태그 생성
+                const tagsContainer = document.getElementById('ingredientsList');
+                tagsContainer.innerHTML = ''; 
+                
+                if(data.ingredients && data.ingredients.length > 0) {
+                    data.ingredients.forEach(ingredient => {
+                        const span = document.createElement('span');
+                        span.className = 'tag';
+                        span.innerText = ingredient;
+                        tagsContainer.appendChild(span);
+                    });
+                } else {
+                    tagsContainer.innerHTML = '<span class="tag" style="background:#ffebee; color:#c62828;">인식된 재료 없음</span>';
+                }
+
+                // 2) 레시피 파싱 및 카드 생성 (마크다운 완벽 대응 버전)
+                const recipeContent = document.getElementById('recipeContent');
+                const rawRecipe = data.recipes;
+
+                // 1. 처음 나오는 불필요한 큰 제목 지우기
+                let text = rawRecipe.replace(/^# .*\n+/m, '');
+
+                // 2. '## 1.', '## 2.' 등 숫자 제목을 기준으로 요리를 나누기
+                const recipesArray = text.split(/(?=## \d+\.)/); 
+                let htmlContent = '';
+
+                recipesArray.forEach(recipe => {
+                    if (recipe.trim().length < 10) return; 
+
+                    // 3. 기호(#, *)를 지우고 예쁜 HTML 태그로 치환하기
+                    let formatted = recipe
+                        .replace(/## \d+\.\s*(.*)/, '<span class="recipe-title">🍳 $1</span><div class="recipe-text">')
+                        .replace(/(\*\*|\[)?필요한 추가 재료(\*\*|\])?(\s*-\s*)?/, '</div><span class="recipe-sub-title">🛒 필요한 추가 재료</span><div class="recipe-text">')
+                        .replace(/(\*\*|\[)?간단한 조리 순서(\*\*|\])?/, '</div><span class="recipe-sub-title">👨‍🍳 조리 순서</span><div class="recipe-text">')
+                        + '</div>'; 
+                        
+                    // 혹시라도 남아있는 별표(**)나 샵(#) 찌꺼기 깔끔하게 청소
+                    formatted = formatted.replace(/[*#]/g, '');
+
+                    // 하나의 완성된 카드로 만들기
+                    htmlContent += `<div class="recipe-card">${formatted}</div>`;
+                });
+
+                recipeContent.innerHTML = htmlContent;
+                
+                // ✅ 복구된 부분: UI 상태 복구 (성공 시)
+                document.getElementById('loadingArea').style.display = 'none';
+                document.getElementById('resultArea').style.display = 'block';
+
+            } catch (error) {
+                // ✅ 복구된 부분: 에러 처리
+                console.error(error);
+                alert('서버와 통신하는 중 오류가 발생했습니다.');
+                document.getElementById('loadingArea').style.display = 'none';
+            } finally {
+                // ✅ 복구된 부분: 버튼 다시 활성화
+                document.getElementById('submitBtn').disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
